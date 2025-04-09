@@ -12,6 +12,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { UserRole } from "@prisma/client";
+import { signIn } from "next-auth/react";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -30,6 +32,7 @@ export default function SignupPage() {
   const router = useRouter();
   const [role, setRole] = useState<"employer" | "candidate">("employer");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -46,14 +49,59 @@ export default function SignupPage() {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
-    setIsLoading(true);
-    
-    // In a real app, we would register with the server here
-    // For now, we'll just simulate a delay and redirect
-    setTimeout(() => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      
+      // Create user with the selected role via API
+      const userRole = role === "employer" ? UserRole.EMPLOYER : UserRole.CANDIDATE;
+      
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          role: userRole
+        })
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        setError(responseData.error || "Failed to create account. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Sign in the user
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+      
+      if (result?.error) {
+        setError("Authentication failed after signup. Please log in manually.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Direct redirect based on selected role
+      if (role === "employer") {
+        window.location.href = "/dashboard/employer";
+      } else {
+        window.location.href = "/dashboard/candidate";
+      }
+      
+    } catch (error) {
+      console.error("Signup error:", error);
+      setError("An error occurred during signup. Please try again.");
       setIsLoading(false);
-      router.push("/dashboard");
-    }, 1000);
+    }
   };
 
   return (
@@ -86,6 +134,12 @@ export default function SignupPage() {
               Discover opportunities and showcase your skills
             </TabsContent>
           </Tabs>
+          
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-4">
+              {error}
+            </div>
+          )}
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
