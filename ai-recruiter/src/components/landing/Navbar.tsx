@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
 export function Navbar() {
@@ -43,19 +43,20 @@ export function Navbar() {
         {/* Mobile Navigation */}
         <Sheet>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="mr-2">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
           <SheetContent>
-            <div className="flex flex-col gap-4 mt-8">
-              <Link href="#features" className="text-base font-medium hover:underline">
+            <SheetTitle className="text-center">Menu</SheetTitle>
+            <div className="flex flex-col gap-4 mt-4">
+              <Link href="#features" className="text-base font-medium hover:underline ml-2">
                 Features
               </Link>
-              <Link href="#how-it-works" className="text-base font-medium hover:underline">
+              <Link href="#how-it-works" className="text-base font-medium hover:underline ml-2">
                 How It Works
               </Link>
-              <Link href="#pricing" className="text-base font-medium hover:underline">
+              <Link href="#pricing" className="text-base font-medium hover:underline ml-2">
                 Pricing
               </Link>
               <Button variant="outline" asChild className="w-full mt-2">
