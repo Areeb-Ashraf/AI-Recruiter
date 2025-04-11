@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -9,52 +8,31 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Briefcase, Users, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Briefcase, Users, Edit, Trash2, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
-// Sample job data (will be replaced with API calls later)
-const sampleJobs = [
-  {
-    id: 1,
-    title: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    description: "Looking for an experienced frontend developer proficient in React, Next.js, and TypeScript.",
-    requiredSkills: ["React", "Next.js", "TypeScript", "CSS"],
-    jobType: "Full-Time",
-    salary: "$120,000 - $150,000",
-    location: "Remote",
-    applicantsCount: 12,
-    postedDate: "2023-12-15"
-  },
-  {
-    id: 2,
-    title: "Backend Engineer",
-    company: "DataFlow Systems",
-    description: "We need a skilled backend developer with experience in Node.js and database design.",
-    requiredSkills: ["Node.js", "MongoDB", "Express", "API Design"],
-    jobType: "Full-Time",
-    salary: "$110,000 - $140,000",
-    location: "On-site",
-    applicantsCount: 8,
-    postedDate: "2023-12-10"
-  },
-  {
-    id: 3,
-    title: "UX/UI Designer",
-    company: "Creative Solutions",
-    description: "Create beautiful user interfaces and experiences for our web applications.",
-    requiredSkills: ["Figma", "UI Design", "User Research", "Prototyping"],
-    jobType: "Part-Time",
-    salary: "$80,000 - $100,000",
-    location: "Hybrid",
-    applicantsCount: 5,
-    postedDate: "2023-12-05"
-  }
-];
+// Define Job type based on our database schema
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  requiredSkills: string[];
+  jobType: string;
+  salary: string | null;
+  location: string;
+  applicantsCount: number;
+  postedDate: string;
+  employerId: string;
+}
 
 export default function EmployerDashboardPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isAddingJob, setIsAddingJob] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [newJob, setNewJob] = useState({
     title: "",
     company: "",
@@ -64,8 +42,8 @@ export default function EmployerDashboardPage() {
     salary: "",
     location: ""
   });
-  const [jobs, setJobs] = useState(sampleJobs);
 
+  // Fetch jobs on component mount
   useEffect(() => {
     if (status === "loading") return;
     
@@ -77,42 +55,110 @@ export default function EmployerDashboardPage() {
     // Check if user is an employer
     if (session?.user?.role !== "EMPLOYER") {
       router.push("/dashboard/candidate");
+      return;
     }
+
+    // Fetch jobs from the API
+    fetchJobs();
   }, [session, status, router]);
+
+  // Fetch jobs from the API
+  const fetchJobs = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/jobs');
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch jobs');
+      }
+      
+      const data = await response.json();
+      setJobs(data);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      toast.error('Failed to load your jobs');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/" });
   };
 
-  const handleAddJob = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddJob = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // In a real app, this would send data to the backend
-    const newJobWithId = {
-      ...newJob,
-      id: jobs.length + 1,
-      requiredSkills: newJob.requiredSkills.split(",").map(skill => skill.trim()),
-      applicantsCount: 0,
-      postedDate: new Date().toISOString().split("T")[0]
-    };
-    setJobs([newJobWithId, ...jobs]);
-    setIsAddingJob(false);
-    setNewJob({
-      title: "",
-      company: "",
-      description: "",
-      requiredSkills: "",
-      jobType: "Full-Time",
-      salary: "",
-      location: ""
-    });
+    
+    try {
+      setIsSubmitting(true);
+      
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newJob)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create job');
+      }
+      
+      const createdJob = await response.json();
+      
+      // Update the local state with the new job
+      setJobs([createdJob, ...jobs]);
+      setIsAddingJob(false);
+      toast.success('Job posted successfully!');
+      
+      // Reset the form
+      setNewJob({
+        title: "",
+        company: "",
+        description: "",
+        requiredSkills: "",
+        jobType: "Full-Time",
+        salary: "",
+        location: ""
+      });
+    } catch (error) {
+      console.error('Error creating job:', error);
+      toast.error('Failed to create job');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteJob = (id: number) => {
-    setJobs(jobs.filter(job => job.id !== id));
+  const handleDeleteJob = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this job?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/jobs/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete job');
+      }
+      
+      // Update the local state by removing the deleted job
+      setJobs(jobs.filter(job => job.id !== id));
+      toast.success('Job deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast.error('Failed to delete job');
+    }
   };
 
   if (status === "loading") {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -236,67 +282,111 @@ export default function EmployerDashboardPage() {
                         />
                       </div>
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setIsAddingJob(false)} className="cursor-pointer">Cancel</Button>
-                        <Button type="submit" className="cursor-pointer">Create Job Posting</Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setIsAddingJob(false)} 
+                          className="cursor-pointer"
+                          disabled={isSubmitting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          className="cursor-pointer flex items-center gap-2"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Creating...</span>
+                            </>
+                          ) : (
+                            <span>Create Job Posting</span>
+                          )}
+                        </Button>
                       </div>
                     </form>
                   </CardContent>
                 </Card>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {jobs.map((job) => (
-                  <Card key={job.id} className="flex flex-col h-full">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-xl">{job.title}</CardTitle>
-                          <p className="text-gray-600 text-sm mt-1 mb-3">{job.company}</p>
-                          <CardDescription className="flex items-center gap-2 mt-1">
-                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">{job.jobType}</span>
-                            <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded">{job.location}</span>
-                          </CardDescription>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : jobs.length === 0 ? (
+                <div className="bg-white p-8 rounded-lg shadow text-center">
+                  <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No jobs posted yet</h3>
+                  <p className="text-gray-600 mb-6">Create your first job posting to start recruiting candidates</p>
+                  <Button 
+                    onClick={() => setIsAddingJob(true)} 
+                    className="cursor-pointer"
+                  >
+                    Add Your First Job
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {jobs.map((job) => (
+                    <Card key={job.id} className="flex flex-col h-full">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="text-xl">{job.title}</CardTitle>
+                            <p className="text-gray-600 text-sm mt-1 mb-3">{job.company}</p>
+                            <CardDescription className="flex items-center gap-2 mt-1">
+                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">{job.jobType}</span>
+                              <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded">{job.location}</span>
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-red-500 cursor-pointer" 
+                              onClick={() => handleDeleteJob(job.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 cursor-pointer" onClick={() => handleDeleteJob(job.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <p className="text-sm text-gray-600 line-clamp-3 mb-3">{job.description}</p>
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-500 mb-1">Required Skills:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {job.requiredSkills.map((skill, index) => (
+                              <span key={index} className="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-0.5 rounded">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <p className="text-sm text-gray-600 line-clamp-3 mb-3">{job.description}</p>
-                      <div className="mt-2">
-                        <p className="text-xs text-gray-500 mb-1">Required Skills:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {job.requiredSkills.map((skill, index) => (
-                            <span key={index} className="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-0.5 rounded">
-                              {skill}
-                            </span>
-                          ))}
+                        {job.salary && (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium">{job.salary}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                      <CardFooter className="border-t pt-4 flex justify-between">
+                        <div className="text-xs text-gray-500">
+                          Posted: {new Date(job.postedDate).toLocaleDateString()}
                         </div>
-                      </div>
-                      {job.salary && (
-                        <div className="mt-3">
-                          <p className="text-sm font-medium">{job.salary}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                    <CardFooter className="border-t pt-4 flex justify-between">
-                      <div className="text-xs text-gray-500">
-                        Posted: {job.postedDate}
-                      </div>
-                      <Button variant="outline" size="sm" className="flex items-center gap-1 cursor-pointer">
-                        <Users className="h-3 w-3" />
-                        <span>Applicants ({job.applicantsCount})</span>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+                        <Button variant="outline" size="sm" className="flex items-center gap-1 cursor-pointer">
+                          <Users className="h-3 w-3" />
+                          <span>Applicants ({job.applicantsCount})</span>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="applicants">

@@ -44,6 +44,7 @@ model User {
   role          UserRole  @default(CANDIDATE)
   accounts      Account[]
   sessions      Session[]
+  jobs          Job[]
 }
 
 model VerificationToken {
@@ -57,4 +58,19 @@ model VerificationToken {
 enum UserRole {
   EMPLOYER
   CANDIDATE
+}
+
+model Job {
+  id             String   @id @default(cuid())
+  title          String
+  company        String
+  description    String
+  requiredSkills String[]
+  jobType        String
+  salary         String?
+  location       String
+  postedDate     DateTime @default(now())
+  employerId     String
+  employer       User     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  applicantsCount Int     @default(0)
 } 
