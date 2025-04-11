@@ -10,21 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, Briefcase, Users, Edit, Trash2, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
-
-// Define Job type based on our database schema
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  description: string;
-  requiredSkills: string[];
-  jobType: string;
-  salary: string | null;
-  location: string;
-  applicantsCount: number;
-  postedDate: string;
-  employerId: string;
-}
+import { Job } from "@/types/job";
+import { JobEditForm } from "@/components/jobs/job-edit-form";
 
 export default function EmployerDashboardPage() {
   const router = useRouter();
@@ -42,6 +29,9 @@ export default function EmployerDashboardPage() {
     salary: "",
     location: ""
   });
+  // Add state for job editing
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Fetch jobs on component mount
   useEffect(() => {
@@ -151,6 +141,16 @@ export default function EmployerDashboardPage() {
       console.error('Error deleting job:', error);
       toast.error('Failed to delete job');
     }
+  };
+
+  const handleEditJob = (job: Job) => {
+    setEditingJob(job);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleJobUpdated = (updatedJob: Job) => {
+    // Update the job in the local state
+    setJobs(jobs.map(job => job.id === updatedJob.id ? updatedJob : job));
   };
 
   if (status === "loading") {
@@ -342,7 +342,12 @@ export default function EmployerDashboardPage() {
                             </CardDescription>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 cursor-pointer"
+                              onClick={() => handleEditJob(job)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
@@ -399,6 +404,14 @@ export default function EmployerDashboardPage() {
           </Tabs>
         </div>
       </div>
+      {editingJob && (
+        <JobEditForm
+          job={editingJob}
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          onJobUpdated={handleJobUpdated}
+        />
+      )}
     </div>
   );
 } 
