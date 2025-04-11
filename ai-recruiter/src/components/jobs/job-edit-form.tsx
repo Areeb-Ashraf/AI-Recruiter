@@ -155,11 +155,14 @@ export function JobEditForm({ job, isOpen, onClose, onJobUpdated }: JobEditFormP
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Job Description</Label>
+            <div className="flex justify-between">
+              <Label htmlFor="description">Job Description</Label>
+              <span className="text-xs text-gray-500">Formatting: Use line breaks for paragraphs and bullet points (•)</span>
+            </div>
             <textarea
               id="description"
               name="description"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[200px] font-mono text-sm"
               placeholder="Describe the job responsibilities and requirements..."
               value={formData.description}
               onChange={handleChange}

@@ -8,10 +8,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Briefcase, Users, Edit, Trash2, Loader2 } from "lucide-react";
+import { PlusCircle, Briefcase, Users, Edit, Trash2, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Job } from "@/types/job";
 import { JobEditForm } from "@/components/jobs/job-edit-form";
+import { EmployerJobDetailDialog } from "@/components/jobs/employer-job-detail-dialog";
 
 export default function EmployerDashboardPage() {
   const router = useRouter();
@@ -32,6 +33,9 @@ export default function EmployerDashboardPage() {
   // Add state for job editing
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  // Add state for job detail dialog
+  const [viewingJob, setViewingJob] = useState<Job | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
 
   // Fetch jobs on component mount
   useEffect(() => {
@@ -153,6 +157,11 @@ export default function EmployerDashboardPage() {
     setJobs(jobs.map(job => job.id === updatedJob.id ? updatedJob : job));
   };
 
+  const handleViewJobDetails = (job: Job) => {
+    setViewingJob(job);
+    setIsDetailDialogOpen(true);
+  };
+
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -271,11 +280,22 @@ export default function EmployerDashboardPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="description">Job Description</Label>
+                        <div className="flex justify-between">
+                          <Label htmlFor="description">Job Description</Label>
+                          <span className="text-xs text-gray-500">Formatting: Use line breaks for paragraphs and bullet points (•)</span>
+                        </div>
                         <textarea 
                           id="description"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
-                          placeholder="Describe the job responsibilities and requirements..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[200px] font-mono text-sm"
+                          placeholder="Describe the job responsibilities and requirements...
+
+Example formatting:
+• Responsibility 1
+• Responsibility 2
+
+Required Qualifications:
+• Qualification 1
+• Qualification 2"
                           value={newJob.description}
                           onChange={(e) => setNewJob({...newJob, description: e.target.value})}
                           required
@@ -362,7 +382,7 @@ export default function EmployerDashboardPage() {
                         </div>
                       </CardHeader>
                       <CardContent className="flex-grow">
-                        <p className="text-sm text-gray-600 line-clamp-3 mb-3">{job.description}</p>
+                        <div className="text-sm text-gray-600 mb-3 whitespace-pre-line line-clamp-3">{job.description}</div>
                         <div className="mt-2">
                           <p className="text-xs text-gray-500 mb-1">Required Skills:</p>
                           <div className="flex flex-wrap gap-1">
@@ -383,10 +403,21 @@ export default function EmployerDashboardPage() {
                         <div className="text-xs text-gray-500">
                           Posted: {new Date(job.postedDate).toLocaleDateString()}
                         </div>
-                        <Button variant="outline" size="sm" className="flex items-center gap-1 cursor-pointer">
-                          <Users className="h-3 w-3" />
-                          <span>Applicants ({job.applicantsCount})</span>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="flex items-center gap-1 cursor-pointer">
+                            <Users className="h-3 w-3" />
+                            <span>Applicants ({job.applicantsCount})</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="flex items-center gap-1 cursor-pointer"
+                            onClick={() => handleViewJobDetails(job)}
+                          >
+                            <ChevronRight className="h-3 w-3" />
+                            <span>Details</span>
+                          </Button>
+                        </div>
                       </CardFooter>
                     </Card>
                   ))}
@@ -410,6 +441,15 @@ export default function EmployerDashboardPage() {
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
           onJobUpdated={handleJobUpdated}
+        />
+      )}
+      {viewingJob && (
+        <EmployerJobDetailDialog
+          job={viewingJob}
+          isOpen={isDetailDialogOpen}
+          onClose={() => setIsDetailDialogOpen(false)}
+          onEdit={handleEditJob}
+          onDelete={handleDeleteJob}
         />
       )}
     </div>

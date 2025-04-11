@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Briefcase, ClipboardList, Calendar, ChevronRight, Filter, Clock, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Job } from "@/types/job";
+import { JobDetailDialog } from "@/components/jobs/job-detail-dialog";
 
 // Sample interview history data - will be replaced with API calls later
 const sampleInterviews = [
@@ -55,6 +56,8 @@ export default function CandidateDashboardPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isJobDetailOpen, setIsJobDetailOpen] = useState(false);
 
   // Fetch all jobs from the database
   useEffect(() => {
@@ -132,6 +135,11 @@ export default function CandidateDashboardPage() {
     // This would navigate to the interview page in a real app
     console.log(`Taking interview for job ID: ${jobId}`);
     // router.push(`/interview/${jobId}`);
+  };
+
+  const handleViewJobDetails = (job: Job) => {
+    setSelectedJob(job);
+    setIsJobDetailOpen(true);
   };
 
   if (status === "loading") {
@@ -265,7 +273,9 @@ export default function CandidateDashboardPage() {
                           </div>
                         </CardHeader>
                         <CardContent className="pb-2">
-                          <p className="text-sm text-gray-600 mb-3">{job.description}</p>
+                          <div className="text-sm text-gray-600 mb-3 whitespace-pre-line line-clamp-3">
+                            {job.description}
+                          </div>
                           <div>
                             <p className="text-xs text-gray-500 mb-1">Skills:</p>
                             <div className="flex flex-wrap gap-1">
@@ -291,7 +301,7 @@ export default function CandidateDashboardPage() {
                           >
                             Take AI Interview
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-xs sm:text-sm flex items-center cursor-pointer">
+                          <Button variant="ghost" size="sm" className="text-xs sm:text-sm flex items-center cursor-pointer" onClick={() => handleViewJobDetails(job)}>
                             View Details
                             <ChevronRight className="h-4 w-4 ml-1" />
                           </Button>
@@ -379,6 +389,14 @@ export default function CandidateDashboardPage() {
           </Tabs>
         </main>
       </div>
+      {selectedJob && (
+        <JobDetailDialog
+          job={selectedJob}
+          isOpen={isJobDetailOpen}
+          onClose={() => setIsJobDetailOpen(false)}
+          onApply={handleTakeInterview}
+        />
+      )}
     </div>
   );
 } 
