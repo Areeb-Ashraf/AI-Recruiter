@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -9,68 +8,11 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Briefcase, ClipboardList, Calendar, ChevronRight, Filter, Clock } from "lucide-react";
+import { Search, Briefcase, ClipboardList, Calendar, ChevronRight, Filter, Clock, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { Job } from "@/types/job";
 
-// Sample job data (will be replaced with API calls later)
-const sampleJobs = [
-  {
-    id: 1,
-    title: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    description: "Looking for an experienced frontend developer proficient in React, Next.js, and TypeScript.",
-    requiredSkills: ["React", "Next.js", "TypeScript", "CSS"],
-    jobType: "Full-Time",
-    salary: "$120,000 - $150,000",
-    location: "Remote",
-    postedDate: "2023-12-15"
-  },
-  {
-    id: 2,
-    title: "Backend Engineer",
-    company: "DataFlow Systems",
-    description: "We need a skilled backend developer with experience in Node.js and database design.",
-    requiredSkills: ["Node.js", "MongoDB", "Express", "API Design"],
-    jobType: "Full-Time",
-    salary: "$110,000 - $140,000",
-    location: "On-site",
-    postedDate: "2023-12-10"
-  },
-  {
-    id: 3,
-    title: "UX/UI Designer",
-    company: "Creative Solutions",
-    description: "Create beautiful user interfaces and experiences for our web applications.",
-    requiredSkills: ["Figma", "UI Design", "User Research", "Prototyping"],
-    jobType: "Part-Time",
-    salary: "$80,000 - $100,000",
-    location: "Hybrid",
-    postedDate: "2023-12-05"
-  },
-  {
-    id: 4,
-    title: "Data Scientist",
-    company: "Insight Analytics",
-    description: "Analyze complex data sets and build predictive models to drive business decisions.",
-    requiredSkills: ["Python", "Machine Learning", "SQL", "Statistics"],
-    jobType: "Full-Time",
-    salary: "$130,000 - $160,000",
-    location: "Remote",
-    postedDate: "2023-12-08"
-  },
-  {
-    id: 5,
-    title: "DevOps Engineer",
-    company: "CloudTech Solutions",
-    description: "Manage our cloud infrastructure and implement CI/CD pipelines.",
-    requiredSkills: ["AWS", "Docker", "Kubernetes", "Terraform"],
-    jobType: "Full-Time",
-    salary: "$115,000 - $145,000",
-    location: "Remote",
-    postedDate: "2023-12-12"
-  }
-];
-
-// Sample interview history data
+// Sample interview history data - will be replaced with API calls later
 const sampleInterviews = [
   {
     id: 101,
@@ -111,26 +53,15 @@ export default function CandidateDashboardPage() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [jobTypeFilter, setJobTypeFilter] = useState<string>("All");
   const [showFilters, setShowFilters] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // All available skills for filter (extracted from jobs)
-  const allSkills = Array.from(
-    new Set(sampleJobs.flatMap(job => job.requiredSkills))
-  ).sort();
+  // Fetch all jobs from the database
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
-  // Filtered jobs based on search and filters
-  const filteredJobs = sampleJobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          job.company.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesSkills = selectedSkills.length === 0 || 
-                          selectedSkills.some(skill => job.requiredSkills.includes(skill));
-    
-    const matchesJobType = jobTypeFilter === "All" || job.jobType === jobTypeFilter;
-    
-    return matchesSearch && matchesSkills && matchesJobType;
-  });
-
+  // Authentication check
   useEffect(() => {
     if (status === "loading") return;
     
@@ -145,6 +76,46 @@ export default function CandidateDashboardPage() {
     }
   }, [session, status, router]);
 
+  // Fetch jobs from the API
+  const fetchJobs = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/jobs/public');
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch jobs');
+      }
+      
+      const data = await response.json();
+      setJobs(data);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      toast.error('Failed to load available jobs');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // All available skills for filter (extracted from jobs)
+  const allSkills = Array.from(
+    new Set(jobs.flatMap(job => job.requiredSkills))
+  ).sort();
+
+  // Filtered jobs based on search and filters
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          job.company.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesSkills = selectedSkills.length === 0 || 
+                          selectedSkills.some(skill => job.requiredSkills.includes(skill));
+    
+    const matchesJobType = jobTypeFilter === "All" || job.jobType === jobTypeFilter;
+    
+    return matchesSearch && matchesSkills && matchesJobType;
+  });
+
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: "/" });
   };
@@ -157,14 +128,16 @@ export default function CandidateDashboardPage() {
     }
   };
 
-  const handleTakeInterview = (jobId: number) => {
+  const handleTakeInterview = (jobId: string) => {
     // This would navigate to the interview page in a real app
     console.log(`Taking interview for job ID: ${jobId}`);
     // router.push(`/interview/${jobId}`);
   };
 
   if (status === "loading") {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>;
   }
 
   return (
@@ -233,6 +206,7 @@ export default function CandidateDashboardPage() {
                       <option value="Part-Time">Part-Time</option>
                       <option value="Remote">Remote</option>
                       <option value="Contract">Contract</option>
+                      <option value="Hybrid">Hybrid</option>
                     </select>
                   </div>
                 </div>
@@ -266,7 +240,11 @@ export default function CandidateDashboardPage() {
                   <p className="text-sm text-gray-500">{filteredJobs.length} jobs found</p>
                 </div>
                 
-                {filteredJobs.length === 0 ? (
+                {isLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : filteredJobs.length === 0 ? (
                   <div className="bg-white rounded-lg shadow-sm p-8 text-center">
                     <p className="text-gray-500">No jobs match your search criteria. Try adjusting your filters.</p>
                   </div>
@@ -282,7 +260,7 @@ export default function CandidateDashboardPage() {
                             </div>
                             <div className="flex flex-col items-end">
                               <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">{job.jobType}</span>
-                              <span className="text-xs text-gray-500 mt-1">Posted: {job.postedDate}</span>
+                              <span className="text-xs text-gray-500 mt-1">Posted: {new Date(job.postedDate).toLocaleDateString()}</span>
                             </div>
                           </div>
                         </CardHeader>
