@@ -16,6 +16,7 @@ const sampleJobs = [
   {
     id: 1,
     title: "Senior Frontend Developer",
+    company: "TechCorp Inc.",
     description: "Looking for an experienced frontend developer proficient in React, Next.js, and TypeScript.",
     requiredSkills: ["React", "Next.js", "TypeScript", "CSS"],
     jobType: "Full-Time",
@@ -27,6 +28,7 @@ const sampleJobs = [
   {
     id: 2,
     title: "Backend Engineer",
+    company: "DataFlow Systems",
     description: "We need a skilled backend developer with experience in Node.js and database design.",
     requiredSkills: ["Node.js", "MongoDB", "Express", "API Design"],
     jobType: "Full-Time",
@@ -38,6 +40,7 @@ const sampleJobs = [
   {
     id: 3,
     title: "UX/UI Designer",
+    company: "Creative Solutions",
     description: "Create beautiful user interfaces and experiences for our web applications.",
     requiredSkills: ["Figma", "UI Design", "User Research", "Prototyping"],
     jobType: "Part-Time",
@@ -54,6 +57,7 @@ export default function EmployerDashboardPage() {
   const [isAddingJob, setIsAddingJob] = useState(false);
   const [newJob, setNewJob] = useState({
     title: "",
+    company: "",
     description: "",
     requiredSkills: "",
     jobType: "Full-Time",
@@ -94,6 +98,7 @@ export default function EmployerDashboardPage() {
     setIsAddingJob(false);
     setNewJob({
       title: "",
+      company: "",
       description: "",
       requiredSkills: "",
       jobType: "Full-Time",
@@ -117,18 +122,18 @@ export default function EmployerDashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900">Employer Dashboard</h1>
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-600 hidden md:block">Welcome, {session?.user?.name}</div>
-            <Button onClick={handleLogout} variant="outline">Logout</Button>
+            <Button onClick={handleLogout} variant="outline" className="cursor-pointer">Logout</Button>
           </div>
         </div>
 
         <div className="py-8">
           <Tabs defaultValue="jobs" className="w-full">
             <TabsList className="mb-4">
-              <TabsTrigger value="jobs" className="flex items-center gap-2">
+              <TabsTrigger value="jobs" className="flex items-center gap-2 cursor-pointer">
                 <Briefcase className="h-4 w-4" />
                 <span>My Jobs</span>
               </TabsTrigger>
-              <TabsTrigger value="applicants" className="flex items-center gap-2">
+              <TabsTrigger value="applicants" className="flex items-center gap-2 cursor-pointer">
                 <Users className="h-4 w-4" />
                 <span>All Applicants</span>
               </TabsTrigger>
@@ -139,7 +144,7 @@ export default function EmployerDashboardPage() {
                 <div className="mb-6">
                   <Button 
                     onClick={() => setIsAddingJob(true)} 
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 cursor-pointer"
                   >
                     <PlusCircle className="h-4 w-4" />
                     <span>Add New Job</span>
@@ -165,10 +170,20 @@ export default function EmployerDashboardPage() {
                           />
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="company">Company Name</Label>
+                          <Input 
+                            id="company" 
+                            placeholder="e.g. TechCorp Inc." 
+                            value={newJob.company}
+                            onChange={(e) => setNewJob({...newJob, company: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="jobType">Job Type</Label>
                           <select 
                             id="jobType"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
                             value={newJob.jobType}
                             onChange={(e) => setNewJob({...newJob, jobType: e.target.value})}
                           >
@@ -221,8 +236,8 @@ export default function EmployerDashboardPage() {
                         />
                       </div>
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setIsAddingJob(false)}>Cancel</Button>
-                        <Button type="submit">Create Job Posting</Button>
+                        <Button type="button" variant="outline" onClick={() => setIsAddingJob(false)} className="cursor-pointer">Cancel</Button>
+                        <Button type="submit" className="cursor-pointer">Create Job Posting</Button>
                       </div>
                     </form>
                   </CardContent>
@@ -236,16 +251,17 @@ export default function EmployerDashboardPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-xl">{job.title}</CardTitle>
+                          <p className="text-gray-600 text-sm mt-1 mb-3">{job.company}</p>
                           <CardDescription className="flex items-center gap-2 mt-1">
                             <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">{job.jobType}</span>
                             <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded">{job.location}</span>
                           </CardDescription>
                         </div>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleDeleteJob(job.id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 cursor-pointer" onClick={() => handleDeleteJob(job.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -273,7 +289,7 @@ export default function EmployerDashboardPage() {
                       <div className="text-xs text-gray-500">
                         Posted: {job.postedDate}
                       </div>
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                      <Button variant="outline" size="sm" className="flex items-center gap-1 cursor-pointer">
                         <Users className="h-3 w-3" />
                         <span>Applicants ({job.applicantsCount})</span>
                       </Button>
