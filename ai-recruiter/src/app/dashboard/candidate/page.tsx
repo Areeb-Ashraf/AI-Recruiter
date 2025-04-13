@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,56 +13,49 @@ import { toast } from "react-hot-toast";
 import { Job } from "@/types/job";
 import { JobDetailDialog } from "@/components/jobs/job-detail-dialog";
 
-// Sample interview history data - will be replaced with API calls later
-const sampleInterviews = [
-  {
-    id: 101,
-    jobTitle: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    date: "2023-12-18",
-    duration: "45 minutes",
-    status: "Completed",
-    score: "85%",
-    feedback: "Strong technical skills, could improve communication"
-  },
-  {
-    id: 102,
-    jobTitle: "Full Stack Developer",
-    company: "WebSoft Technologies",
-    date: "2023-12-10",
-    duration: "38 minutes",
-    status: "Completed",
-    score: "92%",
-    feedback: "Excellent problem-solving skills"
-  },
-  {
-    id: 103,
-    jobTitle: "React Developer",
-    company: "Digital Innovations",
-    date: "2023-12-05",
-    duration: "42 minutes",
-    status: "Completed",
-    score: "78%",
-    feedback: "Good React knowledge, needs to improve on backend concepts"
+// Define Interview type
+interface Interview {
+  id: string;
+  jobId: string;
+  candidateId: string;
+  date: string;
+  duration: string;
+  status: string;
+  score: string;
+  feedback: string;
+  job: {
+    id: string;
+    title: string;
+    company: string;
+    jobType: string;
+    location: string;
+    salary: string | null;
   }
-];
+}
 
 export default function CandidateDashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab');
   const { data: session, status } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [jobTypeFilter, setJobTypeFilter] = useState<string>("All");
   const [showFilters, setShowFilters] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInterviewsLoading, setIsInterviewsLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false);
 
-  // Fetch all jobs from the database
+  // Fetch all jobs and interviews from the database
   useEffect(() => {
-    fetchJobs();
-  }, []);
+    if (status === "authenticated") {
+      fetchJobs();
+      fetchInterviews();
+    }
+  }, [status]);
 
   // Authentication check
   useEffect(() => {
@@ -78,6 +71,16 @@ export default function CandidateDashboardPage() {
       router.push("/dashboard/employer");
     }
   }, [session, status, router]);
+
+  // Handle tab selection from URL parameter
+  useEffect(() => {
+    if (activeTab === 'interviews') {
+      const interviewsTab = document.querySelector('[data-value="interviews"]');
+      if (interviewsTab instanceof HTMLElement) {
+        interviewsTab.click();
+      }
+    }
+  }, [activeTab]);
 
   // Fetch jobs from the API
   const fetchJobs = async () => {
@@ -100,13 +103,38 @@ export default function CandidateDashboardPage() {
     }
   };
 
+  // Fetch interviews from the API
+  const fetchInterviews = async () => {
+    try {
+      setIsInterviewsLoading(true);
+      const response = await fetch('/api/interviews');
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch interviews');
+      }
+      
+      const data = await response.json();
+      setInterviews(data);
+    } catch (error) {
+      console.error('Error fetching interviews:', error);
+      toast.error('Failed to load your interviews');
+    } finally {
+      setIsInterviewsLoading(false);
+    }
+  };
+
+  // Filter out jobs that the candidate has already interviewed for
+  const interviewedJobIds = interviews.map(interview => interview.jobId);
+  const availableJobs = jobs.filter(job => !interviewedJobIds.includes(job.id));
+
   // All available skills for filter (extracted from jobs)
   const allSkills = Array.from(
-    new Set(jobs.flatMap(job => job.requiredSkills))
+    new Set(availableJobs.flatMap(job => job.requiredSkills))
   ).sort();
 
   // Filtered jobs based on search and filters
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = availableJobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           job.company.toLowerCase().includes(searchQuery.toLowerCase());
@@ -132,9 +160,7 @@ export default function CandidateDashboardPage() {
   };
 
   const handleTakeInterview = (jobId: string) => {
-    // This would navigate to the interview page in a real app
-    console.log(`Taking interview for job ID: ${jobId}`);
-    // router.push(`/interview/${jobId}`);
+    router.push(`/interview/${jobId}`);
   };
 
   const handleViewJobDetails = (job: Job) => {
@@ -171,7 +197,7 @@ export default function CandidateDashboardPage() {
                   <Briefcase className="h-4 w-4" />
                   <span>Find Jobs</span>
                 </TabsTrigger>
-                <TabsTrigger value="interviews" className="flex items-center justify-center gap-2 py-3 text-base cursor-pointer">
+                <TabsTrigger value="interviews" className="flex items-center justify-center gap-2 py-3 text-base cursor-pointer" data-value="interviews">
                   <ClipboardList className="h-4 w-4" />
                   <span>My Interviews</span>
                 </TabsTrigger>
@@ -317,14 +343,18 @@ export default function CandidateDashboardPage() {
               <div className="rounded-lg bg-white shadow-sm p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Interview History</h2>
                 
-                {sampleInterviews.length === 0 ? (
+                {isInterviewsLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : interviews.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">You haven't completed any interviews yet.</p>
                     <p className="text-gray-500 mt-2">Start by browsing available jobs and taking an interview.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {sampleInterviews.map((interview) => (
+                    {interviews.map((interview) => (
                       <Card key={interview.id} className="overflow-hidden">
                         <div className={`w-full h-1.5 ${
                           parseInt(interview.score) > 85 ? "bg-green-500" : 
@@ -333,8 +363,8 @@ export default function CandidateDashboardPage() {
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-start">
                             <div>
-                              <CardTitle className="text-lg">{interview.jobTitle}</CardTitle>
-                              <p className="text-gray-600 text-sm">{interview.company}</p>
+                              <CardTitle className="text-lg">{interview.job.title}</CardTitle>
+                              <p className="text-gray-600 text-sm">{interview.job.company}</p>
                             </div>
                             <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs font-medium">
                               <Clock className="h-3 w-3" />
@@ -346,7 +376,7 @@ export default function CandidateDashboardPage() {
                           <div className="flex items-center gap-4 mb-3">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-4 w-4 text-gray-500" />
-                              <span className="text-sm text-gray-600">{interview.date}</span>
+                              <span className="text-sm text-gray-600">{new Date(interview.date).toLocaleDateString()}</span>
                             </div>
                             <div className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded">
                               {interview.status}

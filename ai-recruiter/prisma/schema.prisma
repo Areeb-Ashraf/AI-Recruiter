@@ -45,6 +45,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   jobs          Job[]
+  interviews    Interview[]
 }
 
 model VerificationToken {
@@ -73,4 +74,21 @@ model Job {
   employerId     String
   employer       User     @relation(fields: [employerId], references: [id], onDelete: Cascade)
   applicantsCount Int     @default(0)
+  interviews     Interview[]
+}
+
+model Interview {
+  id          String   @id @default(cuid())
+  jobId       String
+  candidateId String
+  date        DateTime @default(now())
+  duration    String   @default("30 minutes")
+  status      String   @default("Completed")
+  score       String   @default("85%")
+  feedback    String   @default("Good performance overall. Demonstrated strong technical knowledge.")
+  
+  job       Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate User @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  
+  @@unique([jobId, candidateId])
 } 
