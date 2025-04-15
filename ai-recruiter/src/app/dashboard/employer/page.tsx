@@ -13,6 +13,7 @@ import { toast } from "react-hot-toast";
 import { Job } from "@/types/job";
 import { JobEditForm } from "@/components/jobs/job-edit-form";
 import { EmployerJobDetailDialog } from "@/components/jobs/employer-job-detail-dialog";
+import { ApplicantsList } from "@/components/applicants/applicants-list";
 
 export default function EmployerDashboardPage() {
   const router = useRouter();
@@ -426,11 +427,7 @@ Required Qualifications:
             </TabsContent>
             
             <TabsContent value="applicants">
-              <div className="bg-white p-8 rounded-lg shadow">
-                <h2 className="text-xl font-semibold mb-4">All Applicants</h2>
-                <p className="text-gray-600">This section will show all applicants across all your job postings.</p>
-                <p className="text-gray-600 mt-2">Coming soon...</p>
-              </div>
+              <ApplicantsList />
             </TabsContent>
           </Tabs>
         </div>
