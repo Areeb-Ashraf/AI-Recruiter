@@ -74,7 +74,18 @@ model Job {
   employerId     String
   employer       User     @relation(fields: [employerId], references: [id], onDelete: Cascade)
   applicantsCount Int     @default(0)
+  requirements   String?  @db.Text
+  responsibilities String? @db.Text
   interviews     Interview[]
+}
+
+enum InterviewStatus {
+  PENDING       // Interview created but not started
+  IN_PROGRESS   // Interview started but not completed
+  PENDING_REVIEW // Waiting for AI analysis
+  COMPLETED     // Analysis complete
+  REJECTED      // Candidate rejected
+  APPROVED      // Candidate approved for next round
 }
 
 model Interview {
@@ -82,10 +93,14 @@ model Interview {
   jobId       String
   candidateId String
   date        DateTime @default(now())
-  duration    String   @default("30 minutes")
-  status      String   @default("Completed")
-  score       String   @default("85%")
-  feedback    String   @default("Good performance overall. Demonstrated strong technical knowledge.")
+  duration    Int?     // Duration in minutes
+  status      InterviewStatus @default(PENDING)
+  score       Int?     // 0-100 score
+  feedback    String?  @db.Text
+  transcript  String?  @db.Text  // JSON string of conversation
+  strengths   String[] // Array of strengths identified
+  improvements String[] // Areas for improvement
+  completedAt DateTime?
   
   job       Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
   candidate User @relation(fields: [candidateId], references: [id], onDelete: Cascade)
