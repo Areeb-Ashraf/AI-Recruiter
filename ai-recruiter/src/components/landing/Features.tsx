@@ -1,70 +1,102 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Users, Clock, BarChart3, Award, Shield } from "lucide-react";
+import { motion } from "framer-motion";
+import { 
+  Brain, 
+  Clock, 
+  Users, 
+  BarChart3, 
+  Shield, 
+  Zap 
+} from "lucide-react";
 
 const features = [
   {
-    title: "AI-Powered Interviews",
-    description: "Our AI conducts personalized interviews, evaluating skills and fit without bias.",
+    name: "AI-Powered Interviews",
+    description: "Conduct intelligent interviews with our advanced AI system that adapts to each candidate's responses.",
     icon: Brain,
   },
   {
-    title: "Talent Matching",
-    description: "Advanced algorithms match candidates to the perfect roles based on skills and preferences.",
-    icon: Users,
-  },
-  {
-    title: "Time-Saving",
-    description: "Reduce hiring time by 70% with automated screening and interview processes.",
+    name: "Time-Saving Automation",
+    description: "Automate repetitive tasks and focus on what matters most - finding the perfect candidate.",
     icon: Clock,
   },
   {
-    title: "Data-Driven Insights",
-    description: "Access comprehensive analytics to make informed hiring decisions.",
+    name: "Bias-Free Selection",
+    description: "Ensure fair hiring practices with our AI that eliminates unconscious bias from the recruitment process.",
+    icon: Users,
+  },
+  {
+    name: "Data-Driven Insights",
+    description: "Make informed decisions with comprehensive analytics and candidate performance metrics.",
     icon: BarChart3,
   },
   {
-    title: "Quality Candidates",
-    description: "Focus on top performers identified through objective skill assessments.",
-    icon: Award,
+    name: "Secure & Compliant",
+    description: "Rest easy knowing your recruitment process meets all security and compliance requirements.",
+    icon: Shield,
   },
   {
-    title: "Secure & Compliant",
-    description: "Enterprise-grade security ensures your data is protected at all times.",
-    icon: Shield,
+    name: "Real-Time Processing",
+    description: "Get instant feedback and results, allowing for quick decision-making in your hiring process.",
+    icon: Zap,
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="bg-gray-50 py-20">
-      <div className="container mx-auto px-4">
-        <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Transforming Recruitment with AI
+    <div className="relative py-24 sm:py-32 overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl"></div>
+      </div>
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            Revolutionizing Recruitment Through{" "}
+            <span className="text-primary">Artificial Intelligence</span>
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Discover how our platform makes hiring faster, fairer, and more effective.
+            Our platform combines cutting-edge AI technology with human expertise to transform your hiring process.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
-            <Card key={index} className="border-none shadow-md">
-              <CardHeader>
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <feature.icon className="h-6 w-6 text-primary" />
+            <motion.div
+              key={feature.name}
+              className="relative group"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <div className="relative p-6 bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-indigo-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-indigo-600 text-white shadow-lg">
+                    <feature.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900 group-hover:text-primary transition-colors duration-300">
+                    {feature.name}
+                  </h3>
+                  <p className="mt-2 text-gray-600">
+                    {feature.description}
+                  </p>
                 </div>
-                <CardTitle className="text-xl">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base">{feature.description}</CardDescription>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 } 
