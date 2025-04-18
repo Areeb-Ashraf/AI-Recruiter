@@ -8,10 +8,11 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Briefcase, ClipboardList, Calendar, ChevronRight, Filter, Clock, Loader2 } from "lucide-react";
+import { Search, Briefcase, ClipboardList, Calendar, ChevronRight, Filter, Clock, Loader2, User, LogOut } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Job } from "@/types/job";
 import { JobDetailDialog } from "@/components/jobs/job-detail-dialog";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Define Interview type
 interface Interview {
@@ -175,24 +176,47 @@ export default function CandidateDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <header className="py-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Candidate Dashboard</h1>
-              <p className="text-gray-600 mt-1">Welcome, {session?.user?.name}</p>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] shadow-md sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 p-2 rounded-md">
+                <User className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Candidate Dashboard</h1>
             </div>
-            <Button onClick={handleLogout} variant="outline" className="shrink-0 cursor-pointer">Logout</Button>
+            <div className="flex items-center gap-4">
+              <div 
+                className="hidden md:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full cursor-pointer hover:bg-white/20 transition-colors"
+                onClick={() => router.push("/dashboard/candidate/candidate-profile")}
+              >
+                <User className="h-4 w-4 text-white" />
+                <span className="text-sm font-medium text-white">{session?.user?.name}</span>
+              </div>
+              <Button 
+                onClick={handleLogout} 
+                variant="outline" 
+                className="flex items-center gap-2 border-white/20 text-black hover:text-white hover:bg-white/10"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Dashboard Content */}
-        <main className="py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <Tabs defaultValue="jobs" className="w-full">
             <div className="flex justify-center mb-8">
-              <TabsList className="grid grid-cols-2 w-full h-full max-w-md ">
+              <TabsList className="grid grid-cols-2 w-full h-full max-w-md">
                 <TabsTrigger value="jobs" className="flex items-center justify-center gap-2 py-3 text-base cursor-pointer">
                   <Briefcase className="h-4 w-4" />
                   <span>Find Jobs</span>
@@ -206,7 +230,7 @@ export default function CandidateDashboardPage() {
             
             <TabsContent value="jobs" className="space-y-6">
               {/* Search and filters */}
-              <div className="rounded-lg bg-white shadow-sm p-4">
+              <div className="rounded-lg bg-white shadow-lg p-4 border-0">
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -276,76 +300,87 @@ export default function CandidateDashboardPage() {
                 
                 {isLoading ? (
                   <div className="flex justify-center items-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <Loader2 className="h-8 w-8 animate-spin text-[#3b82f6]" />
                   </div>
                 ) : filteredJobs.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                  <div className="bg-white rounded-lg shadow-lg p-8 text-center border-0">
                     <p className="text-gray-500">No jobs match your search criteria. Try adjusting your filters.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {filteredJobs.map((job) => (
-                      <Card key={job.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-xl">{job.title}</CardTitle>
-                              <p className="text-gray-600 mt-1">{job.company}</p>
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">{job.jobType}</span>
-                              <span className="text-xs text-gray-500 mt-1">Posted: {new Date(job.postedDate).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="text-sm text-gray-600 mb-3 whitespace-pre-line line-clamp-3">
-                            {job.description}
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">Skills:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {job.requiredSkills.map((skill, index) => (
-                                <span key={index} className="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-0.5 rounded">
-                                  {skill}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="mt-3 flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium">{job.salary}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">{job.location}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="bg-gray-50 pt-3 pb-3 flex justify-between items-center">
-                          <Button 
-                            variant="default" 
-                            className="text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
-                            onClick={() => handleTakeInterview(job.id)}
-                          >
-                            Take AI Interview
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-xs sm:text-sm flex items-center cursor-pointer" onClick={() => handleViewJobDetails(job)}>
-                            View Details
-                            <ChevronRight className="h-4 w-4 ml-1" />
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
+                    <AnimatePresence>
+                      {filteredJobs.map((job) => (
+                        <motion.div
+                          key={job.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.3 }}
+                          whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+                        >
+                          <Card className="overflow-hidden border-0 shadow-md transition-all duration-300">
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <CardTitle className="text-xl">{job.title}</CardTitle>
+                                  <p className="text-gray-600 mt-1">{job.company}</p>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">{job.jobType}</span>
+                                  <span className="text-xs text-gray-500 mt-1">Posted: {new Date(job.postedDate).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pb-2">
+                              <div className="text-sm text-gray-600 mb-3 whitespace-pre-line line-clamp-3">
+                                {job.description}
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Skills:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {job.requiredSkills.map((skill, index) => (
+                                    <span key={index} className="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-0.5 rounded">
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="mt-3 flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">{job.salary}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">{job.location}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="bg-gray-50 pt-3 pb-3 flex justify-between items-center">
+                              <Button 
+                                variant="default" 
+                                className="text-xs sm:text-sm bg-[#3b82f6] hover:bg-[#2563eb] cursor-pointer"
+                                onClick={() => handleTakeInterview(job.id)}
+                              >
+                                Take AI Interview
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-xs sm:text-sm flex items-center cursor-pointer" onClick={() => handleViewJobDetails(job)}>
+                                View Details
+                                <ChevronRight className="h-4 w-4 ml-1" />
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
             </TabsContent>
             
             <TabsContent value="interviews">
-              <div className="rounded-lg bg-white shadow-sm p-6">
+              <div className="rounded-lg bg-white shadow-lg p-6 border-0">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Interview History</h2>
                 
                 {isInterviewsLoading ? (
                   <div className="flex justify-center items-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <Loader2 className="h-8 w-8 animate-spin text-[#3b82f6]" />
                   </div>
                 ) : interviews.length === 0 ? (
                   <div className="text-center py-8">
@@ -354,70 +389,81 @@ export default function CandidateDashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {interviews.map((interview) => (
-                      <Card key={interview.id} className="overflow-hidden">
-                        <div className={`w-full h-1.5 ${
-                          parseInt(interview.score) > 85 ? "bg-green-500" : 
-                          parseInt(interview.score) > 70 ? "bg-amber-500" : "bg-red-500"
-                        }`}></div>
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">{interview.job.title}</CardTitle>
-                              <p className="text-gray-600 text-sm">{interview.job.company}</p>
-                            </div>
-                            <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs font-medium">
-                              <Clock className="h-3 w-3" />
-                              <span>{interview.duration}</span>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="flex items-center gap-4 mb-3">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-gray-500" />
-                              <span className="text-sm text-gray-600">{new Date(interview.date).toLocaleDateString()}</span>
-                            </div>
-                            <div className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                              {interview.status}
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div>
-                              <p className="text-xs text-gray-500">Performance Score:</p>
-                              <div className="flex items-center gap-2">
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                  <div 
-                                    className={`h-2.5 rounded-full ${
-                                      parseInt(interview.score) > 85 ? "bg-green-500" : 
-                                      parseInt(interview.score) > 70 ? "bg-amber-500" : "bg-red-500"
-                                    }`} 
-                                    style={{ width: interview.score }}
-                                  ></div>
+                    <AnimatePresence>
+                      {interviews.map((interview) => (
+                        <motion.div
+                          key={interview.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.3 }}
+                          whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+                        >
+                          <Card className="overflow-hidden border-0 shadow-md transition-all duration-300">
+                            <div className={`w-full h-1.5 ${
+                              parseInt(interview.score) > 85 ? "bg-green-500" : 
+                              parseInt(interview.score) > 70 ? "bg-amber-500" : "bg-red-500"
+                            }`}></div>
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <CardTitle className="text-lg">{interview.job.title}</CardTitle>
+                                  <p className="text-gray-600 text-sm">{interview.job.company}</p>
                                 </div>
-                                <span className="text-sm font-medium">{interview.score}</span>
+                                <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs font-medium">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{interview.duration}</span>
+                                </div>
                               </div>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Feedback:</p>
-                              <p className="text-sm">{interview.feedback}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="bg-gray-50 pt-3 pb-3">
-                          <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm cursor-pointer">
-                            View Interview Details
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
+                            </CardHeader>
+                            <CardContent className="pb-2">
+                              <div className="flex items-center gap-4 mb-3">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4 text-gray-500" />
+                                  <span className="text-sm text-gray-600">{new Date(interview.date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                                  {interview.status}
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <div>
+                                  <p className="text-xs text-gray-500">Performance Score:</p>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                      <div 
+                                        className={`h-2.5 rounded-full ${
+                                          parseInt(interview.score) > 85 ? "bg-green-500" : 
+                                          parseInt(interview.score) > 70 ? "bg-amber-500" : "bg-red-500"
+                                        }`} 
+                                        style={{ width: interview.score }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-sm font-medium">{interview.score}</span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Feedback:</p>
+                                  <p className="text-sm">{interview.feedback}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="bg-gray-50 pt-3 pb-3">
+                              <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm cursor-pointer">
+                                View Interview Details
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
             </TabsContent>
           </Tabs>
-        </main>
+        </motion.div>
       </div>
       {selectedJob && (
         <JobDetailDialog
