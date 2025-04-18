@@ -45,16 +45,10 @@ const features = [
 
 export function Features() {
   return (
-    <div className="relative py-24 sm:py-32 overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl"></div>
-      </div>
-      
+    <div className="relative py-24 sm:py-32 overflow-hidden border-b border-gray-200">
       <div className="container mx-auto px-4 relative z-10">
         <motion.div 
-          className="text-center"
+          className="text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

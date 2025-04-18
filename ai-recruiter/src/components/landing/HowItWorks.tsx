@@ -61,13 +61,7 @@ const steps = {
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="relative py-20 overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-3xl"></div>
-      </div>
-
+    <section id="how-it-works" className="relative py-20 overflow-hidden border-b border-gray-200 bg-gradient-to-b from-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 relative z-10">
         <motion.div 
           className="mb-16 text-center"
